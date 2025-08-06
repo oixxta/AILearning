@@ -1,0 +1,125 @@
+#그냥 파이썬 List와 Numpy의 배열의 비교!
+import numpy as np
+
+ss = ['tommy', 'james', 'oscar', 5]
+print(ss, type(ss))    #그냥 파이썬 리스트의 내용물 및 타입 출력
+
+ss2 = np.array(ss)
+print(ss2, type(ss2))  #넘파이 배열의 내용물 및 타입 출력, 넘파이 배열로 들어가면 숫자 5도 자동으로 문자형으로 바뀜.
+
+
+#메모리 비교 : 그냥 파이썬 리스트
+li = list(range(1, 10))         #1에서 10까지 들어있는 그냥 파이썬 리스트
+print(li)                       #해당 리스트 내용물 출력
+print(id(li[0]), ' ', id(li[1]))    #리스트의 첫번째 요소와 두번째 요소가 저장된 메모리의 주소값 출력
+print(li * 10)                  #그냥 파이썬 리스트 * 10 출력, 각 요소에 10을 곱한 값이 아닌, 리스트를 그냥 10번 출력함.
+
+for i in li:                    #for문을 돌려야만 각 요소에 10을 곱한 값을 구할 수 있음.
+    print(i * 10, end = ' ')
+print()
+print([i * 10 for i in li])
+
+print('-' * 10)
+#메모리 비교 : 넘파이의 배열
+numArr = np.array(li)
+print(id(numArr[0]), ' ', id(numArr[1]))    ##넘파이 배열의 첫번째 요소와 두번째 요소가 저장된 메모리의 주소값 출력, 두 값이 같음(같은곳에 저장되어 있음)
+print(numArr * 10)  #넘파이 배열 * 10 출력, 각 요소에 10을 곱한 값으로 반환!
+
+#중요! 넘파이의 어레이는 파이썬의 리스트보다 연산속도가 훨씬 빠름!
+#파이선의 리스트는 각 아이템의 주소값들을 저장하는 방식이라 메모리도 많이 잡아먹고 속도도 느림. 따라서 빅데이터 처리에 매우 곤란함. 
+#넘파이의 어레이는 단 하나의 주소만 저장하고 하나의 객체 내에 연속적으로 인덱스를 구성해 저장하기 때문에 메모리 소모가 적음. C언어의 포인터와 비슷한 개념!
+#대신 넘파이의 데이터 타입(int, float, string 등의 자료형)은 모두 한 가지로 일치해야 함!
+#참고)https://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/
+
+
+print()
+a = np.array([1, 2, 0, 3])
+print(a, type(a), a.dtype, a.shape, a.ndim, a.size) #타입이 int타입
+print(a[0], a[1])
+
+a = np.array([1, 2, 0, 3.0])
+print(a, type(a), a.dtype, a.shape, a.ndim, a.size) #3.0 때문에 타입이 float타입으로 바뀜!
+print(a[0], a[1])
+
+a = np.array([1, 2, 0, '3'])
+print(a, type(a), a.dtype, a.shape, a.ndim, a.size) #'3' 때문에 타입이 string타입
+print(a[0], a[1])
+
+b = np.array([[1, 2, 3],[4, 5, 6]])
+print(b.shape, ' ', b[0], ' ', b[[0]])
+print(b[0, 0], ' ', b[1, 2])
+print()
+
+
+c = np.zeros((2, 2))    #2행 2열짜리 2차원 배열을 모두 0으로 채움
+print(c)
+
+d = np.ones((2, 2))     #2행 2열짜리 2차원 배열을 모두 1로 채움
+print(d)
+
+e = np.full((2, 2), fill_value=7)   #2행 2열짜리 2차원 배열을 모두 fill_value에서 정의한 값(7)로 채움
+print(e)
+
+f = np.eye(3)   #3행 3열짜리 배열을 사선으로 1로 채움
+print(f)
+
+print()
+
+print(np.random.rand(50))    #난수 발생(균등분포, 0 ~ 1 사이의 난수)
+print(np.mean(np.random.rand(50)))
+print(np.random.randn(50))   #난수 발생(정규분포, -1 ~ 1 사이의 난수)
+print(np.mean(np.random.randn(50)))
+
+np.random.seed(0)  #난수값 시드를 고정 (0번째 난수값으로 고정)
+print(np.random.randn(2, 3))    #위에서 난수값이 고정되었기에, 디버그를 여러번 돌려도 같은값으로 나옴. 테스트용
+
+
+print('\n배열 인덱싱 ------------------')
+a = np.array([1, 2, 3, 4, 5])
+print(a)
+print(a[1])
+print('\n배열 슬라이싱 ------------------')
+print(a[1:])
+print(a[1:5])
+print(a[1:5:2])
+print(a[-2:])
+print()
+
+a = np.array([[1, 2, 3, 4], [3, 4, 5, 6], [9, 10, 11, 12]])
+print(a)
+print(a[:])
+print(a[1:])
+print(a[1:, 0:2])
+print(a[0], '', a[0][0], ' ', a[[0]])
+
+print()
+aa = np.array((1, 2, 3))
+print(aa)
+bb = aa[1:3]    #bb는 실제로 메모리 안에 물리적으로 만들어진게 아닌, aa의 일부값을 참고해서 가상의 배열로 만들어짐!
+print(bb, ' ', bb[0])
+bb[0] = 33      #bb의 0번째에 33을 대입
+print(bb)
+print(aa)       #bb뿐만 아니라, aa도 33으로 바뀜!
+cc = aa[1:3].copy()
+print(cc)       #cc는 bb와 달리, 실제로 물리적으로 메모리 안에도 새 것으로 만들어짐.
+cc[0] = 55
+print(cc)
+print(aa)       #aa의 값은 cc의 변경에 아무 영향 없음!
+
+print('----------------------')
+a = np.array([[1, 2, 3],[4, 5, 6],[7, 8, 9]])
+r1 = a[1, :]    #1차원 배열
+r2 = a[1:2, :]  #2차원 배열
+print(r1, r1.shape)
+print(r2, r2.shape)
+print()
+c1 = a[:, 1]    #전체 행 1열 슬라이싱!
+c2 = a[:, 1:2]  #전체 행 1열 슬라이싱!
+print(c1, c1.shape) # [2 5 8] (3,)
+print(c2, c2.shape) # [[2] [5] [8]] (3, 1)
+
+print()
+print(a)
+bool_idx = (a >= 5)
+print(bool_idx)
+print(a[bool_idx])
