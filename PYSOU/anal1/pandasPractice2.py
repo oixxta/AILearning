@@ -13,7 +13,7 @@ import time
 #시각화도 하기
 
 #웹 스크래핑
-url = "https://bongousse.com/api/getMenu?category=밥버거"
+url = "https://bongousse.com/Menu_list.asp"
 headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}
 response = requests.get(url, headers=headers)
 response.raise_for_status()

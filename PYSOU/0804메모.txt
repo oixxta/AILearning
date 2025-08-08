@@ -1,0 +1,354 @@
+<로그(log)> : 데이터 값들의 편차가 클 경우 사용(스케일링), 편차가 큰 데이터들을 일정 범위 내에 넣어서 편차를 줄이는 데에 사용함.
+
+--파일 numpy7log.py--
+#넘파이 로그 변환
+# 데이터 값들의 편차가 클 경우 사용(스케일링), 
+# 편차가 큰 데이터들을 일정 범위 내에 넣어서 편차를 줄이는 데에 사용함.
+# (분포 개선), 궁극적인 목적은 모델이 보다 안정적으로 학습할 수 있도록 만들어 주는 장점이 있음.
+
+import numpy as np
+np.set_printoptions(suppress=True, precision=6)
+
+def test():
+    values = np.array([3.45, 34.5, 0.345, 0.01, 0.1, 10, 100, 1000])    #범위가 다양한 1차원배열
+    print(np.log2(3.45), np.log10(3.45), np.log(3.14))    #2진 로그, 10진 로그, 자연로그
+    print('원본 자료 :', values)
+    log_values = np.log10(values)   #상용로그
+    print('log_values : ', log_values)
+    ln_values = np.log(values)      #자연로그
+    print('ln_values : ', ln_values)
+
+    #표준화(Normalization) : 값을 평균을 기준으로 분포시킴.
+
+    #정규화(Standardization) : 정규화는 데이터의 범위를 0 ~ 1 사이로 변환해 데이터 분포를 조정
+    #(데이터 - 최솟값)을 (최댓값 - 최솟값)으로 나눠서 구함
+
+    #로그값의 최소, 최대를 구해 0 ~ 1 사이 범위로 정규화
+    min_log = np.min(log_values)    #최솟값
+    max_log = np.max(log_values)    #최댓값
+    normalized = (log_values - min_log) / (max_log - min_log)
+    print('정규화 결과 : ', normalized)     #데이터가 원본데이터와 비교해서 평탄화 되었음.
+
+def log_inverse():
+    offset = 1
+    log_value = np.log(10 + offset)
+    print('log_value : ', log_value)
+    original = np.exp(log_value) - offset   #np.exp() : 로그 변환에 역변환 가능
+    print('original : ', original)
+
+# 로그 변환용 클래스
+class LogTrans:
+    def __init__(self, offset:float = 1.0):
+        self.offset = offset
+
+    #로그 변환 수행 메서드
+    def transform(self, x:np.ndarray):
+        # fx() = log(x + offset)
+        return np.log(x + self.offset)
+    
+    #역변환(원래 값으로 복원) 수행 메서드
+    def inverseTrans(self, x_log:np.ndarray):
+        return np.exp(x_log) - self.offset
+
+
+def gogo():
+    print('~' * 20)
+    data = np.array([0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000], dtype=float)
+    #로그 변환용 클래스 객체 생성
+    Log_Trans = LogTrans(offset=1.0)
+
+    #데이터를 로그변환 및 역변환 수행
+    data_log_scaled = Log_Trans.transform(data)
+    recover_data = Log_Trans.inverseTrans(data_log_scaled)
+
+    print('원본 데이터 : ', data )
+    print('로그변환된 데이터 : ', data_log_scaled)
+    print('역변환된 데이터 : ', recover_data)
+
+
+if __name__ == "__main__":
+    test()
+    log_inverse()
+    gogo()
+
+
+
+<Pandas>
+데이터 랭글링: 데이터 랭글링(혹은 데이터 먼징)은 원 자료를 보다 쉽게 접근하고 분석할 수 있도록 데이터를 정리하고 통합하는 과정. 판다스는 데이터 랭글링을 위해 사용함.
+
+판다스의 데이터 프레임: 표 모양의 자료구조로 여러개의 칼럼을 갖고 있음.
+
+--파일 pandas1.py--
+# pandas  : 행과 열이 단순 정수형 인덱스가 아닌, 레이블로 식별되는 numpy의 구조화된 배열을 
+#           보완(강)한 모듈임. 고수준의 지료구조(시계열 축약연산, 누락데이터 처리, SQL, 시계화 등을 지원)
+
+import pandas as pd
+from pandas import Series
+from pandas import DataFrame
+
+import numpy as np
+
+
+#Series : 일련의 객체를 담을 수 있는 1차원 배열과 유사한 자료구조로 색인을 갖음
+# list, array로 부터 만들 수 있음.
+
+obj = Series([3, 7, -5, 4]) #list, tuple 가능, set 불가(set은 순서가 없기 때문에 인덱싱 불가)
+print(obj, type(obj))       #자동 인덱스(명시적)
+print(obj[1])
+obj2 = Series([3, 7, -5, 4], index=['a', 'b', 'c', 'd'])    #기존 숫자 대신, 문자로 인덱스 지정
+print(obj2['b'])
+print(obj2.sum(), np.sum(obj2))     #파이썬 제공 sum, 넘파이 제공 sum
+
+print(obj2.values)  #값들만 출력하는 명령어
+print(obj2.index)   #인덱스들만 출력하는 명령어
+
+
+#판다스의 슬라이싱
+print(obj2['a'])    #인덱스 값이 'a'인 값 출력
+print(obj2[['a']])  #인덱스 값과 내용물 값 동시 출력
+print(obj2[['a', 'b']]) #두개 출력
+print(obj2['a' :'c'])   #범위 출력
+#print(obj2[3])      #위에서 커스텀 인덱스값을 지정했기에, 숫자 인덱스로는 오류가 발생함!
+print(obj2.iloc[3])  #iloc[]를 쓰면 커스텀 인덱스값이 지정되었어도 숫자로도 호출됨.
+print(obj2.iloc[[2, 3]])
+print(obj2 > 0)     #obj2의 값들 중 0보다 클 경우 True 출력
+print('a' in obj2)  #obj2의 인덱스들 중 'a'가 존재하는 지 여부에 대해 출력
+
+print('\ndict type으로 Series 객체 생성')
+names = {'mouse' : 5000, 'keyboard' : 25000, 'monitor' : 450000}    #dict type으로 Series 객체 생성
+print(names, type(names))
+obj3 = Series(names)
+print(obj3, type(obj3)) #dict타입의 key가 자동으로 인덱스로 지정, 내용물도 자동으로 값으로 지정
+obj3.index = ['마우스', '키보드', '모니터'] #이미 지정된 인덱스를 바꿀 수 있음.
+print(obj3)
+print(obj3['마우스'])   #인덱스 값으로 값 호출 가능
+print(obj3[0])  #기능 오류 발생
+
+obj3.name = '상품가격'  #obj3의 Series 이름을 '상품가격'으로 지정.
+print(obj3)
+
+print('-----------------------------------')
+#데이터 프레임 : Series 객체가 모여 표를 구성.
+df = DataFrame(obj3)
+print(df)
+
+data = {    #dict type
+    'irum' : ['홍길동', '한국인', '신기해', '공기밥', '한가해'],
+    'juso' : ['역삼동', '신당동', '역삼동', '역삼동', '신당동'],
+    'nai' : [23, 25, 33, 30, 35]
+}
+frame = DataFrame(data)         #dict를 이용한 데이터프레임 만들기(표의 형태로)
+print(frame)
+
+print(frame['irum'])    #위에서 만든 표에서 칼럼 얻기 1
+print(frame.irum)       #위에서 만든 표에서 칼럼 얻기 2
+print(type(frame.irum)) #데이터 프레임에서 뽑아낸 열의 타입은 Series 타입이 됨!
+
+print(DataFrame(data, columns=['juso', 'irum', 'nai'])) #열 순서는 바꾸는게 가능함(별로 중요하진 않음)
+
+print('\ndata에 NaN(데이터 없음)을 넣기')
+frame2 = DataFrame(data, columns=['irum', 'juso', 'nai', 'tel'],
+                   index=['a', 'b', 'c', 'd', 'e'])
+print(frame2)       #tel 열의 모든 값은 NaN
+
+#NaN으로 된 값들에 새 값을 넣기
+frame2['tel'] = '111-1111'      #모든  tel 열에 같은 값 넣기
+print(frame2)
+val = Series(['222-2222', '333-3333', '444-4444'], index=['b', 'c', 'e'])   #특정 인덱스의 특정 값
+frame2.tel = val
+print(frame2)
+
+print(frame2.T) #Transpose, 행과 열이 바뀜
+
+print(frame2.values)    #2차원 배열 중복리스트 형식으로 반환
+print(frame2.values, type(frame2.values))   #문자열로 취급되기에 ndarray 타입이 됨
+print(frame2.values[0, 1]) #0행 1열의 값 출력
+print(frame2.values[0:2])  #0행과 1행의 내용 출력
+
+#행/열 삭제
+frame3 = frame2.drop('d', axis=0)   #인덱스가 d인 행 삭제
+print(frame3)
+frame4 = frame2.drop('tel', axis=1) #열 이름이 tel인 열 삭제
+print(frame4)
+
+#정렬
+print('-----------')
+print(frame2.sort_index(axis=0, ascending=True))    #행단위 내림차순 정렬 결과
+print(frame2.sort_index(axis=1, ascending=False))   #열단위 오름차순 정렬 결과
+
+print(frame2['juso'].value_counts())    #'주소' 값들의 갯수 반환
+
+#문자열 자르기
+print('----------')
+data = {
+    'juso':['강남구 역삼동', '중구 신당동', '강남구 대치동'],
+    'inwon':[23, 25, 15]
+}
+fr = pd.DataFrame(data)
+print(fr)
+result1 = Series([x.split()[0] for x in fr.juso])   #공백을 구분자로 문자열 분리
+result2 = Series([x.split()[1] for x in fr.juso])   #공백을 구분자로 문자열 분리
+print(result1, result1.value_counts())
+print(result2, result2.value_counts())
+
+
+
+--파일 pandas2.py--
+import pandas as pd
+from pandas import Series
+from pandas import DataFrame
+import numpy as np
+
+# 재색인
+# Series의 재색인
+data = Series([1, 3, 2], index=(1, 4, 2))
+print(data)
+data2 = data.reindex((1, 2, 4)) #1, 2, 4 순으로 재 인덱싱
+print(data2)
+
+# 재색인 할 때 값 채우기
+data3 = data2.reindex([0, 1, 2, 3, 4, 5])
+print(data3)    #없는 값들은 모두 NaN으로 뜸
+# 대응값이 없는(NaN) 인덱스는 결측값인데 777로 채우기
+data3 = data2.reindex([0, 1, 2, 3, 4, 5], fill_value=777)
+print(data3)
+# 결측값이 없을경우 이전 값으로 다음값을 채움
+print()
+data3 = data2.reindex([0, 1, 2, 3, 4, 5], method='ffill')   #method='pad' 로도 가능!
+print(data3)
+# 결측값이 없을경우 앞의 값으로 다음값을 채움
+data3 = data2.reindex([0, 1, 2, 3, 4, 5], method='bfill')   #method='backfill' 로도 가능!
+print(data3)
+
+# bool 처리, 슬라이싱 관련 method : loc(), iloc()
+df = DataFrame(np.arange(12).reshape(4, 3), index=['1월', '2월', '3월', '4월'],
+               columns=['강남', '강북', '서초'])            #4행3열짜리 데이터 생성
+print(df)
+print(df['강남'])       #강남 열만 출력
+print(df['강남'] > 3)   #강남 열 중 3을 초과하는 것만
+print(df[df['강남'] > 3])   #강남 중 데이터 값이 3을 초과하는 것만
+
+
+
+<기초 알고리즘>
+알고리즘은 문제를 해결하기 위한 일련의 단계적 절차 또는 방법
+어떤 문제를 해결하기 위해 컴퓨터가 따라 할 수 있도록 구체적인 명령어를 순서대로 나열한 것이라 할 수 있음.
+
+--파일 test1.py--
+#<알고리즘>
+#문제를 해결하기 위한 일련의 단계적 절차 또는 방법
+#어떤 문제를 해결하기 위해 컴퓨터가 따라 할 수 있도록 구체적인 명령어를 순서대로 나열한 것이라 할 수 있음.
+#컴퓨터 프로그램을 만들기 위한 알고리즘은 계산과정을 최대한 구체적이고 명료하게 작성해야 한다.
+#'문제 -> 데이터입력 -> 알고리즘으로 처리 -> 결과 출력'이 알고리즘의 기본
+
+
+
+#문1) 1 ~ 10(n) 까지의 연속된 정수의 합 구하기
+def totFunc(n):     #방법 1 -> O표기법으로는 시간복잡도 O(n)
+    tot = 0
+    for i in range(1, n + 1):
+        tot = tot + i
+    return tot
+
+print(totFunc(100))
+
+def totFunc2(n):    #방법 2 -> O표기법으로는 시간복잡도 O(1), 방법 1보다 더 빠름
+    return n * (n + 1) // 2     #덧셈 후 곱셈 후 나눗셈
+
+print(totFunc2(100))
+
+#주어진 문제를 푸는 방법은 다양하다. 어떤 방법이 더 효과적인지 알아내는 것이 '알고리즘 분석'
+#'알고리즘 분석' 평가 방법으로 계산 복잡도 표현 방식이 있음.
+# 1) 공간 복잡도 : 메모리 사용량 분석
+# 2) 시간 복잡도 : 처리 시간을 분석
+# O(빅 오) 표기법 : 알고리즘의 효율성을 표현해주는 표기법
+
+
+#문2) 임의 정수들 중 최대값 찾기
+#입력 : 숫자 n개를 가진 list
+#출력 : 숫자 n개 중 최대값을 출력
+def findMaxFunc(a):                 #방법1) 시간복잡도 O(n)
+    maxValue = a[0]
+    for i in range(1, len(a)):
+        if (a[i] > maxValue):
+            maxValue = a[i]
+    return maxValue
+
+d = [17, 92, 11, 33, 55, 7, 27, 42]
+print(findMaxFunc(d))
+
+#최대값 위치(인덱스) 반환
+def findMaxFunc2(a):                 #방법2) 시간복잡도 O(n)
+    maxValue = 0
+    for i in range(1, len(a)):
+        if (a[i] > a[maxValue]):
+            maxValue = i
+    return maxValue
+
+d = [17, 92, 11, 33, 55, 7, 27, 42]
+print(findMaxFunc2(d))
+
+
+#문3) 동명이인 찾기 : n명의 사람 이름 중 동일한 이름을 찾아 결과를 출력
+imsi = ['길동', '순식', '순식', '길동']
+imsi2 = set(imsi)
+imsi = list(imsi2)
+print(imsi)
+
+def findSameFunc(a):                #시간복잡도 O(n * n)
+    n = len(a)
+    result = set()
+    for i in range(0, n-1): #0부터 n-2까지 반복
+        for j in range(i + 1, n):
+            if(a[i] == a[j]):           #이름이 같으면
+                result.add(a[i])
+    return result
+
+names = ['tom', 'jerrt', 'mike', 'tom', 'tom', 'mike']
+print(findSameFunc(names))
+
+
+#문4) 팩토리얼 구하는 알고리즘
+#재귀함수 : 자기 자신을 호출하는 함수, 종료조건이 필수로 정의되어야 함 + 분할정복이 사용되어야 함
+# 방법 1 - 반복문 사용
+def factirialFunc(n):
+    imsi = 1
+    for i in range(1, n + 1):
+        imsi = imsi * i
+    return imsi
+
+print(factirialFunc(5))
+
+# 방법 2 - 재귀 사용
+def factoricalFunc2(n):
+    if(n <= 1):         #종료 조건
+        return 1
+    return n * factoricalFunc2(n - 1)   #재귀 호출
+
+print(factoricalFunc2(5))
+
+
+# 재귀 연습1) 1부터 n까지의 합 구하기 : 재귀를 써서(반복문 x)
+def recurtionFunc1(n):
+    if(n <= 1):
+        return 1
+    return n + recurtionFunc1(n - 1)
+print("문제 1 정답 : ", recurtionFunc1(3))
+
+
+# 재귀 연습2) 숫자 n개 중 최대값 구하기 : 재귀를 써서(반복문 x)
+def recurtionFunc2(a, n):
+    if(n - 1 == 0):          #종료조건
+        return a[0]
+    
+    if(a[n - 1] > a[n - 2]):
+        a.pop(n - 2)
+    else:
+        a.pop(n - 1)
+    return recurtionFunc2(a, n - 1)
+
+values = [7, 9, 15, 42, 33, 22]
+
+print("문제 2 정답 : ", recurtionFunc2(values, len(values)))
+
+
