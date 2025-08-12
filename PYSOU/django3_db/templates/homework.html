@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <hr>
+    <h2>1. 사번, 직원명, 부서명, 직급, 연봉, 근무년수를 DataFrame에 기억 후 출력하시오.</h2>
+    <h5>부서번호순 정렬</h5>
+    {{mydf_sorted1_html | safe}}
+    <h5>직원명순 정렬</h5>
+    {{mydf_sorted2_html | safe}}
+    <hr>
+    <h2>2. 부서명, 직급 자료를 이용하여 각각 연봉합, 연봉평균을 구하시오.</h2>
+    <h4>총무부 연봉합 : {{gadPaySum | safe}}</h4>
+    <h4>총무부 연봉평균 : {{gadPayMean | safe}}</h4>
+    <h4>영업부 연봉합 : {{sdPaySum | safe}}</h4>
+    <h4>영업부 연봉평균 : {{sdPayMean | safe}}</h4>
+    <h4>전산부 연봉합 : {{cdPaySum | safe}}</h4>
+    <h4>전산부 연봉평균 : {{cdPayMean | safe}}</h4>
+    <h4>관리부 연봉합 : {{adPaySum | safe}}</h4>
+    <h4>관리부 연봉평균 : {{adPayMean | safe}}</h4>
+    <hr>
+    <h2>3. 부서명별 연봉합, 평균을 이용하여 세로막대 그래프를 출력하시오.</h2>
+    <img src = "{% static 'myGraph.png' %}" />
+    <hr>
+    <h2>4. 성별, 직급별 빈도표를 출력하시오.</h2>
+    <img src = "{% static 'myGraph2.png' %}" />
+    <img src = "{% static 'myGraph3.png' %}" />
+    <hr>
+</body>
+</html>

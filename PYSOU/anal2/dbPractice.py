@@ -82,4 +82,5 @@ try:
 except Exception as error:
     print('failed to load MariaDB!', error)
 finally:
+    cursor.close()
     connect.close()

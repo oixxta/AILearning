@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>templates/show</title>
+</head>
+<body class="container py-3">
+    <h2>show iris data</h2>
+    <div class = "table-responsive">
+        {{table | safe}}
+    </div>
+    <hr>
+    <h3>count of species pyChart</h3>
+    <img src = "{% static img_relpath %}" alt="iris pie chart" style="width: 50%;" />
+</body>
+</html>
