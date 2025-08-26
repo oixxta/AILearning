@@ -17,6 +17,7 @@ data = pd.read_csv("https://raw.githubusercontent.com/pykwon/python/refs/heads/m
 print(data)
 print(data.info)
 
+
 # 데이터 상관관계 확인하기
 data.drop([data.columns[6],data.columns[9],data.columns[10]], axis=1, inplace=True)
 print(data.corr())
@@ -122,8 +123,41 @@ import statsmodels.api as sm
 print('Durbin-Watson : ', sm.stats.stattools.durbin_watson(residual))   #1.931498127082959
 
 
-#4. 등분산성 : 그룹간의 분산이 유사해야 한다. 독립변수의 모든 값에 대한 오차들의 분산은 일정해야 한다.
+#4. 등분산성(Homoscedasticity) : 그룹간의 분산이 유사해야 한다. 독립변수의 모든 값에 대한 오차들의 분산은 일정해야 한다.(독립변수가 복수일 때만 한다)
+#시각화 : 잔차가 일정한 분포를 갖고 분산을 갖고 퍼져있어야 함.
+sr = stats.zscore(residual)
+sns.regplot(x=fitted, y=np.sqrt(abs(sr)), lowess=True, line_kws={'color':'red'})
+plt.show()  #시각화로 확인
+#수치로 확인 : het_breuschpagan
+from statsmodels.stats.diagnostic import het_breuschpagan
+bp_test = het_breuschpagan(residual, lModel.model.exog) #잔차와 독립변수의 관계를 확인함
+print(bp_test[0], bp_test[1])  #통계량 출력 : 1.1276773825795061, p값 : 0.8898563862439574
+#p값이 0.05보다 커야 등분산성이 만족함.
+#등분산성 만족(0.8898563862439574 > 0.05)
 
 
-#5. 다중공선성 : 다중회귀 분석 시 두 개 이상의 독립변수 간에 강한 상관관계가 있어서는 안된다.
+#5. 다중공선성 : 다중회귀 분석 시 두 개 이상의 독립변수 간에 강한 상관관계가 있어서는 안된다.(독립변수가 복수일 때만 한다)
+#VIF(분산팽창지수)로 다중공선성 여부를 확인 : 연속형의 경우, 10을 넘으면 다중공선성을 의심해야 함.
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+imsiDf = data[['Income', 'Advertising', 'Price', 'Age']]
+vifdf = pd.DataFrame()
+vifdf['vif_value'] = [variance_inflation_factor(imsiDf, i) for i in range(imsiDf.shape[1])]
+print(vifdf)
+#   vif_value
+#0   5.971040       Income
+#1   1.993726       Advertising
+#2   9.979281       Price
+#3   8.267760       Age
+#4개의 독립변수가 모두 VIF값 10을 넘지 않았기 때문에, 다중공선성 문제가 발생하지 않는다.
 
+
+# 저장된 모델을 읽어 새로운 데이터에 대한 예측
+import joblib
+ourModel = joblib.load('myModel.model')
+newDf = pd.DataFrame({'Income':[35, 63, 25], 'Advertising':[6, 3, 11], 'Price':[105, 88, 77], 'Age':[33, 55, 22]})
+new_pred = ourModel.predict(newDf)
+print('Sales 예측 결과 :\n', new_pred)
+# Sales 예측 결과 :
+# 0     8.664248
+# 1     8.507928
+# 2    11.296480
