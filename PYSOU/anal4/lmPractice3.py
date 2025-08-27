@@ -1,50 +1,11 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
-
-import sys
-import pickle
-import MySQLdb
-
-
-"""
-회귀분석 문제 4) 
-
-원격 DB의 jikwon 테이블에서 근무년수에 대한 연봉을 이용하여 회귀분석 모델을 작성하시오.
-장고로 작성한 웹에서 근무년수를 입력하면 예상 연봉이 나올 수 있도록 프로그래밍 하시오.
-LinearRegression 사용. Ajax 처리!!!      참고: Ajax 처리가 힘들면 그냥 submit()을 해도 됩니다.
-"""
-def lmPractice4():
-    #데이터 긁어오기 : 서버에서
-    try:
-        with open('myMaria.dat', mode='rb') as obj:
-            config = pickle.load(obj)
-    except Exception as e:
-        print('fail to read server!', e)
-        sys.exit()
-    
-    try:
-        conn = MySQLdb.connect(**config)
-        cursor = conn.cursor()
-
-        sql = """
-            SELECT * FROM jikwon
-        """
-        cursor.execute(sql)
-        dataFromDb = pd.DataFrame(cursor.fetchall(), columns=['jikwonno' , 'jikwonname' , 'busernum' , 'jikwonjik' , 'jikwonpay' , 'jikwonibsail' , 'jikwongen' , 'jikwonrating'])
-    except Exception as e:
-        print('fail to read server!', e)
-    finally:
-        cursor.close()
-        conn.close()
-    
-    print(dataFromDb.head(5))
- #필요없는 칼럼 제거
-    #입사일 칼럼을 바탕으로 연차 칼럼 만들기
-    
-
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 
 """
 회귀분석 문제 5) 
@@ -112,5 +73,67 @@ def lmPractice5():
     print(mean_squared_error(y_test, y_pred))   #12.061743296255045
 
 
-lmPractice4()
+"""
+다항회귀분석 문제) 
+
+데이터 로드 (Servo, UCI) : "https://archive.ics.uci.edu/ml/machine-learning-databases/servo/servo.data"
+cols = ["motor", "screw", "pgain", "vgain", "class"]
+
+ - 타깃/피처 (숫자만 사용: pgain, vgain)
+   x = df[["pgain", "vgain"]].astype(float)   
+   y = df["class"].values
+ - 학습/테스트 분할 ( 8:2 )
+ - 스케일링 (StandardScaler)
+ - 다항 특성 (degree=2) + LinearRegression 또는 Ridge 학습
+ - 성능 평가 
+ - 시각화
+"""
+def lmPractice6():
+    # 데이터 불러오기
+    data = pd.read_csv("https://archive.ics.uci.edu/ml/machine-learning-databases/servo/servo.data")
+    data.columns = ["motor", "screw", "pgain", "vgain", "class"]
+    print(data.info())
+    print(data.head(3))
+
+    # 숫자형 피처와 타깃 추출
+    x = data[["pgain", "vgain"]].astype(float)
+    y = data["class"].astype(float)
+
+    # 학습/테스트 분할 (8:2)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
+
+    # 스케일링
+    scaler = StandardScaler()
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_test_scaled = scaler.transform(x_test)
+
+    # 다항 특성 변환 (degree=2)
+    poly = PolynomialFeatures(degree=2)
+    x_train_poly = poly.fit_transform(x_train_scaled)
+    x_test_poly = poly.transform(x_test_scaled)
+
+    # 선형 회귀 모델 학습
+    model = LinearRegression()
+    model.fit(x_train_poly, y_train)
+
+    # 예측
+    y_pred = model.predict(x_test_poly)
+
+    # 성능 평가
+    print('R²: ', r2_score(y_test, y_pred))             #0.25524898311893973
+    print('MSE: ', mean_squared_error(y_test, y_pred))  #1.2277575517112385
+
+    # 시각화: 예측값 vs 실제값
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_test, y_pred, color='blue', alpha=0.7)
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+    plt.xlabel("real")
+    plt.ylabel("pred")
+    plt.title("real vs pred")
+    plt.grid(True)
+    plt.show()
+
+
+
 #lmPractice5()
+lmPractice6()
