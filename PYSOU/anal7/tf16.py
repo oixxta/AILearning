@@ -3,53 +3,72 @@
 
 """
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import make_column_transformer
 import numpy as np
 import tensorflow as tf
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer, make_column_selector
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import mean_squared_error
 
-# 데이터 가져오기 및 전처리
+# 1) 데이터 읽기
 url = 'https://github.com/pykwon/python/blob/master/testdata_utf8/hd_carprice.xlsx?raw=true'
 trainDf = pd.read_excel(url, sheet_name='train')
-testDf = pd.read_excel(url, sheet_name='test')
-print(trainDf.head(2))
-"""
-     가격    년식   종류    연비   마력    토크   연료  하이브리드   배기량    중량 변속기
-0  1885  2015  준중형  11.8  172  21.0  가솔린      0  1999  1300  자동
-1  2190  2015  준중형  12.3  204  27.0  가솔린      0  1591  1300  자동
-"""
-print(testDf.head(2))
+testDf  = pd.read_excel(url, sheet_name='test')
 
-xTrain = trainDf.drop(['가격'], axis=1) #가격을 제외한 나머지 feature로
-xTest = testDf.drop(['가격'], axis=1)
-yTrain = trainDf[['가격']]              #가격을 label로
-yTest = testDf[['가격']]
+X_train = trainDf.drop(columns=['가격'])
+y_train = trainDf['가격'].values  # (71,) 형태
+X_test  = testDf.drop(columns=['가격'])
+y_test  = testDf['가격'].values
 
-print(xTrain.head(2))
-print(xTrain.columns)       #Index(['년식', '종류', '연비', '마력', '토크', '연료', '하이브리드', '배기량', '중량', '변속기'], dtype='object')
-print(xTrain.shape)         #(71, 10)
+# 2) 컬럼 타입 점검 (참고 출력)
+# print(X_train.dtypes)
 
-print(set(xTrain.종류))     #{'소형', '중형', '준중형', '대형'}
-print(set(xTrain.연료))     #{'LPG', '가솔린', '디젤'}
-print(set(xTrain.변속기))   #{'자동', '수동'}
+# 3) 전처리기: 범주형 원-핫 + 수치형 표준화
+cat_cols = ['종류', '연료', '변속기']
+num_cols = [c for c in X_train.columns if c not in cat_cols]
 
-#종류, 연료, 변속기 이상 3개의 칼럼에 대해서는 labelEncoder(), OneHotEncoder() 등을 적용.
-transformer = make_column_transformer((OneHotEncoder(), ['종류', '연료', '변속기']), remainder='passthrough')
-# remainder : 기본값은 'drop', 'passthrough'를 지정할 경우, 열이 객체변수(transformer)로 전달됨.
-transformer.fit(xTrain)
-xTrain = transformer.transform(xTrain)  # 3개의 칼럼을 포함해, 모든 칼럼이 표준화가 되었음.
-xTest = transformer.transform(xTest)
-print(xTest[:2], xTrain.shape)
-"""
-[[1.000e+00 0.000e+00 0.000e+00 0.000e+00 1.000e+00 0.000e+00 0.000e+00
-  1.000e+00 0.000e+00 2.015e+03 6.800e+00 1.590e+02 2.300e+01 0.000e+00
-  2.359e+03 1.935e+03]
- [0.000e+00 1.000e+00 0.000e+00 0.000e+00 0.000e+00 1.000e+00 0.000e+00
-  0.000e+00 1.000e+00 2.012e+03 1.330e+01 1.080e+02 1.390e+01 0.000e+00
-  1.396e+03 1.035e+03]] (71, 16)
-"""
-print(yTrain[:2], yTrain.shape)
-"""
-0  1885
-1  2190 (71, 1)
-"""
+preprocess = ColumnTransformer(
+    transformers=[
+        ('cat', OneHotEncoder(handle_unknown='ignore', sparse=False), cat_cols),
+        ('num', StandardScaler(), num_cols),
+    ],
+    remainder='drop'
+)
+
+# 4) 전처리 먼저 학습/변환
+preprocess.fit(X_train)
+X_train_t = preprocess.transform(X_train)  # dense numpy array
+X_test_t  = preprocess.transform(X_test)
+
+# 5) 간단한 신경망 (출력층 linear) + 정규화 + 조기종료
+inputs = tf.keras.layers.Input(shape=(X_train_t.shape[1],))
+x = tf.keras.layers.Dense(32, activation='relu',
+                          kernel_regularizer=tf.keras.regularizers.l2(1e-4))(inputs)
+x = tf.keras.layers.Dense(16, activation='relu',
+                          kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
+outputs = tf.keras.layers.Dense(1)(x)  # linear
+
+model = tf.keras.Model(inputs, outputs)
+model.compile(optimizer='adam', loss='mse', metrics=['mse'])
+
+es = tf.keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True, monitor='val_loss')
+
+model.fit(X_train_t, y_train, epochs=200, batch_size=16,
+          validation_data=(X_test_t, y_test), callbacks=[es], verbose=0)
+
+test_mse = model.evaluate(X_test_t, y_test, verbose=0)[0]
+print('Test MSE:', test_mse)
+
+# 6) 예측
+y_pred = model.predict(X_test_t, verbose=0).ravel()
+print('예측값(5):', y_pred[:5])
+print('실제값(5):', y_test[:5])
+
+# 7) 새 샘플 예측 — ★ 컬럼명 반드시 정확히!
+newX = pd.DataFrame(
+    [[2015, '준중형', 12.3, 204, 27.0, '가솔린', 0, 1591, 1300, '자동']],
+    columns=['년식', '종류', '연비', '마력', '토크', '연료', '하이브리드', '배기량', '중량', '변속기']
+)
+newX_t = preprocess.transform(newX)
+new_pred = model.predict(newX_t, verbose=0).ravel()
+print('새 샘플 예측:', new_pred[0])
