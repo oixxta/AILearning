@@ -28,6 +28,8 @@ from keras.layers import Dense, Input, Dropout
 from keras.callbacks import EarlyStopping
 from sklearn.preprocessing import StandardScaler
 from keras.utils import to_categorical
+from tensorflow import keras
+from keras import layers
 
 #데이터 가져오기
 url = 'https://raw.githubusercontent.com/pykwon/python/refs/heads/master/testdata_utf8/HR_comma_sep.csv'
@@ -137,6 +139,33 @@ def modelSQ():
 
     plt.close()
 
+#모델 3번 : Keras : modelSubclassing
+def modelSC():
+    class MyModel(keras.Model):
+        def __init__(self):
+            super().__init__()
+            self.dense1 = layers.Dense(64, activation='relu')
+            self.dropout1 = layers.Dropout(0.2)
+            self.dense2 = layers.Dense(32, activation='relu')
+            self.dropout2 = layers.Dropout(0.2)
+            self.out = layers.Dense(3, activation='softmax')
+        
+        def call(self, inputs, training=False):
+            x = self.dense1(inputs)
+            x = self.dropout1(x, training=training)
+            x = self.dense2(x)
+            x = self.dropout2(x, training=training)
+            return self.out(x)
+    
+    model = MyModel()
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    earlyStop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    history = model.fit(xTrain, yTrain, epochs=1000, validation_split=0.2, callbacks=[earlyStop], verbose=1)
 
-modelRF()
-modelSQ()
+    loss, acc = model.evaluate(xTest, yTest, verbose=0)
+    print(f'최종 평가 : Loss : {loss:.4f}, accuracy : {acc:.4f}')   #최종 평가 : Loss : 0.8809, accuracy : 0.5173
+
+
+#modelRF()
+#modelSQ()
+modelSC()
