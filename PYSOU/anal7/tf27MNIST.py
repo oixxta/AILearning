@@ -93,20 +93,3 @@ print('pred : ', pred)
 print('예측값 : ', np.argmax(pred, 1))
 print('실제값 : ', yTest[:1])
 print('실제값 : ', np.argmax(yTest[:1], 1))
-
-# 모델로 내가 만든 숫자 이미지 예측 시켜보기
-from PIL import Image
-
-myImgFromOut = Image.open('su.png')
-myImg = np.array(myImgFromOut.resize((28, 28), Image.Resampling.LANCZOS).convert('L'))
-print(myImg.shape)
-
-data = myImg.reshape([1, 784]).astype('float32')
-data = data / 255.0
-
-myPred = myModel.predict(data)
-print('pred : ', myPred)
-print('예측값 : ', np.argmax(myPred, 1))
-plt.imshow(data.reshape(28 , 28), cmap = 'Greys')
-plt.show()
-plt.close()
