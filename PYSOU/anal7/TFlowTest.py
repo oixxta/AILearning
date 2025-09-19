@@ -9,7 +9,7 @@ print(tf.__version__)        #설치 정상, 버전 2.20.0
 print('GPU', '사용가능' if tf.config.list_physical_devices('GPU') else '불가능')
 
 print('즉시 실행 모드 : ', tf.executing_eagerly())
-
+"""
 #Tensor 생성
 print(tf.constant(1), type(tf.constant(1)))       # OD Tsnsor - scala
 print(tf.constant([1]), type(tf.constant([1])))   # 1차원 텐서
@@ -40,3 +40,4 @@ print(tf.constant(7, dtype=tf.float32))
 import numpy as np
 arr = np.array([1, 2])
 print(arr, type(arr))       # [1 2] <class 'numpy.ndarray'>
+"""
