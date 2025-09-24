@@ -1,0 +1,57 @@
+전이학습(Transfer Learning)
+전이학습이란 학습 데이터가 부족한 분야의 모델 구축을 위해 데이터가 풍부한 분야에서 훈련된 모델을 재사용 하는 머신러닝 학습기법임. 
+기존에 대규모 데이터셋(COCO, ImageNet 등)으로 학습된 모델(백본)의 지식을 새로운 문제에 재활용하는 머신러닝 기법임.
+
+사용 조건은 기존과 유사한 데이터 도메인 또는 구조를 가질 경우에 사용할 수 있으며, 
+장점으로는 적은 데이터로도 높은 성능 가능, 학습 속도가 빠른 점이 있음.
+
+전이학습의 종류는 귀납 학습, 변형 학습, 자기교수 학습, 자율학습 등이 있음.
+전이학습의 주요 학습 기법으로는 Feature Extraction, Fine-Tuning, Multi-task learning, Domain adaptation, Zero-shot learning 등이 있음.
+
+
+전이학습을 하는 방식은 기존 모델의 합성곱 계층은 그대로 두고, 마지막 분류기(Dense)부분만 새로운 데이터셋에 맞게 새로 학습하는 방법임. 
+
+### 전이학습(Transfer Learning) : 기존 모델(백본) 중 일부만 불러와서 학습에 참여시킴.
+#기존 모델의 가중치는 모두 동결(freeze) -> 새로 추가한 분류층만 학습시킴.
+base_model = keras.applications.MobileNetV2(
+    input_shape=(96, 96, 3),
+    include_top=False,      # 기본 분류기를 포함하지 않음, 컨볼루션(합성곱층)만 남음.
+    weights='imagenet',     # 전이학습을 쓸것이기 때문에 이미지 넷을 넣어야 성능이 개선됨.
+)
+base_model.trainable = False    # 모델의 기존 가중치를 모두 동결시킴 : 
+#결과적으로 MobileNetV2의 컨볼루션만 사용함. 분류기는 직접 정의할 것임.
+
+### Functional API로 모델 만들기 : MobileNetV2 컨볼루션을 재활용
+inputs = keras.Input(shape=(32, 32, 3))
+x = layers.Resizing(96, 96)(inputs)
+x = base_model(x, training=False)
+x = layers.GlobalAveragePooling2D()(x)    #MaxPooling보다 더 급격하게 feature의 크기를 줄임.
+outputs = layers.Dense(units=num_classes, activation='softmax')(x)     #내가 직접 정의한 분류기
+
+model = keras.Model(inputs, outputs)
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+history = model.fit(xTrain, yTrain, epochs=5, batch_size=64, validation_split=0.3, verbose=1)
+print('test 평가 결과 : ', model.evaluate(xTest, yTest))
+
+
+
+미세조정 (Fine-Tuning) 
+미세조정은 전이학습한 모델의 일부 또는 전부를 추가로 학습시켜서 새로운 데이터셋에 더 잘 맞추는 방법임.
+사전 학습(pretrained)된 모델의 일부 또는 전체를 재학습하여, 새로운 작업에 최적화하는 과정으로, Pretrained model을 그대로 혹은 layers를 추가한 후 새로운 작업에 맞는 데이터로 모델을 추가로 더 훈련시키는 방법임.
+
+미세조정을 하는 방법은 처음에는 백본(사전학습된 모델)을 동결(freeze) 시켜 놓고, 새로 붙인 출력층만 학습한 후, 그 다음에는 일부 하위 계층만 풀어서(unfreeze) 아주 작은 학습률로 다시 학습함. 그냥 전이학습만 쓰는 것보다는 정확도가 약간 더 개선될 수 있음.
+
+### Fine-Tunning (미세조정)
+# 동결되어 있던 합성곱 층 중 일부만 동결에서 해제해서 학습에 참여시킴. 대체적으로 성능을 개선함.
+# 베이스 모델 일부 층만 열기 (예 : 마지막 30개만)
+base_model.trainable = True     #백본의 특징추출기 동결 해제
+print(len(base_model.layers))           #전체 베이스 레이어 층의 갯수 확인
+for layer in base_model.layers[:-30]:
+    layer.trainable = False
+
+# 낮은 학습률로 재 컴파일 (optimizer를 건드려야 함. 기본값인 0.0001보다 작게)
+# weight를 너무 변화를 주면 안됨.
+model = keras.Model(inputs, outputs)
+model.compile(optimizer=keras.optimizers.Adam(learning_rate=1e-5), loss='categorical_crossentropy', metrics=['accuracy'])
+history = model.fit(xTrain, yTrain, epochs=5, batch_size=64, validation_split=0.3, verbose=1)
+print('test 평가 결과 : ', model.evaluate(xTest, yTest))
