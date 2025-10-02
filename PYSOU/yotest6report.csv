@@ -1,0 +1,4 @@
+﻿image,object_count,classes,avg_confidence
+image1.jpg,1,person,0.866
+image2.jpg,5,person,0.547
+image3.jpg,15,"dog,person",0.653

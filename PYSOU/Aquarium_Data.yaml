@@ -1,0 +1,12 @@
+names:
+- fish
+- jellyfish
+- penguin
+- puffin
+- shark
+- starfish
+- stingray
+nc: 7
+test: C:/Users/msi/Desktop/Jongseong KIM/AILearning/PYSOU/Aquarium_Data/test/images
+train: C:/Users/msi/Desktop/Jongseong KIM/AILearning/PYSOU/Aquarium_Data/train/images
+validation: C:/Users/msi/Desktop/Jongseong KIM/AILearning/PYSOU/Aquarium_Data/valid/images
