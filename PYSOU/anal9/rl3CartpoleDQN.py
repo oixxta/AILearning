@@ -62,7 +62,7 @@ epsilon_decay = 0.995
 batch_size = 64 # 경험 리플레이에서 랜덤하게 꺼내서 학습에 사용할 셈플의 숫자 32~128 사이가 권장됨.
 # 경험 리플레이 버퍼 : 양방향 큐 자료구조(FiFO)로, append(), popleft() 사용함.
 memory = deque(maxlen=5000)  # 경험 재사용.
-episodes = 50    # 200 ~ 500이 권장됨.
+episodes = 5    # 200 ~ 500이 권장됨.
 # Target Q-Network 갱신주기
 update_target_every = 5
 reward_list = []
