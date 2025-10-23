@@ -8,13 +8,17 @@ import time
 app = Flask(__name__)
 model = YOLO('yolov8n.pt')
 
-### 목표 타겟과의 거리 계산
+target_x = 150
+target_y = 0        #실질적으로 미사용.
+target_z = 150
+target_radius = 25
+
+### 특정 좌표와의 거리 계산
 def calculate_distance(x1, z1, x2, z2):
     distance = math.sqrt((x1 - x2) ** 2 + (z1 - z2) ** 2)
-    print("distance to target : ", distance)
     return distance
 
-### 목표 타겟과의 각도 계산
+### 목표 좌표와의 각도 계산
 def calculate_angle(x1, z1, x2, z2):
     dx = x2 - x1
     dz = z2 - z1
@@ -25,8 +29,6 @@ def calculate_angle(x1, z1, x2, z2):
         angle_deg += 360  # 0~360도로 보정
 
     return angle_deg
-
-### 차체의 초당 속도 및 각도 계산
 
 
 @app.route('/get_action', methods=['POST'])
@@ -44,12 +46,12 @@ def get_action():
     turret_x = turret.get("x", 0)
     turret_y = turret.get("y", 0)
 
-    speed_mps = get_my_speed(pos_x, pos_y, pos_z, time.time())
-    speed_kmh = speed_mps * 3.6
-    #print(f"speed = {speed_mps:.3f} m/s ({speed_kmh:.1f} km/h)")
+    
+    
+    print("각도 : ", calculate_angle(pos_x, pos_z, target_x, target_z))
+    print("거리 : ", calculate_distance(pos_x, pos_z, target_x, target_z))
 
     command = {  }
-    
 
     return jsonify(command)
 
@@ -59,12 +61,12 @@ def get_action():
 def init():
     config = {
         "startMode": "pause",  # Options: "start" or "pause"
-        "blStartX": target_x - target_radius,  #Blue Start Position
+        "blStartX": 60,  #Blue Start Position
         "blStartY": 10,
-        "blStartZ": target_z,
-        "rdStartX": target_x, #Red Start Position
+        "blStartZ": 27.23,
+        "rdStartX": 59, #Red Start Position
         "rdStartY": 10,
-        "rdStartZ": target_z,
+        "rdStartZ": 280,
         "trackingMode": True,
         "detactMode": False,
         "logMode": False,

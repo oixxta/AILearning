@@ -128,7 +128,7 @@ def info():
     if not data:
         return jsonify({"error": "No JSON received"}), 400
 
-    #print("📨 /info data received:", data)
+    print("📨 /info data received:", data)
 
     # Auto-pause after 15 seconds
     #if data.get("time", 0) > 15:
